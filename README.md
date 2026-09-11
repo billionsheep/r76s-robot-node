@@ -11,6 +11,7 @@
 - [已学知识的关系图解](docs/learning/01-system-map.md)
 - [免费云端构建：操作、资源与产物](docs/learning/02-cloud-build.md)
 - [第一次云端构建结果与修复记录](docs/learning/03-first-cloud-build.md)
+- [看实际代码：这一次究竟怎样编译](docs/learning/05-read-the-real-build.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
