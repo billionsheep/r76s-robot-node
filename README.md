@@ -7,6 +7,7 @@
 ## 从这里开始
 
 - [学习路线与真实进度](docs/learning/00-progress.md)
+- [后续计划：系统裁剪与 OpenWrt 实践](docs/learning/04-custom-linux-and-openwrt.md)
 - [已学知识的关系图解](docs/learning/01-system-map.md)
 - [免费云端构建：操作、资源与产物](docs/learning/02-cloud-build.md)
 - [第一次云端构建结果与修复记录](docs/learning/03-first-cloud-build.md)
