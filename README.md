@@ -16,7 +16,7 @@
 
 ## 当前正在做什么
 
-官方 Ubuntu noble-core 已在板上启动，edge-agent 0.1.0 已在该系统原生编译、运行。首轮免费 Learning CI 已通过，ARM64 产物下载校验通过；官方内核/DTB 任务已启动，结果待完成：
+官方 Ubuntu noble-core 已在板上启动，edge-agent 0.1.0 已在该系统原生编译、运行。首轮免费 Learning CI 和官方内核/DTB 构建均已通过，产物已下载并校验。内核任务总计 22 分 13 秒，生成 Linux 6.1.141 和板型属性正确的 R76S DTB，详见 [实测记录](docs/learning/03-first-cloud-build.md)。
 
 | 工作流 | 作用 | 触发方式 |
 | --- | --- | --- |
@@ -27,7 +27,7 @@
 
 ## 接下来
 
-云端组件构建 → U-Boot、内核模块与 Buildroot rootfs → 完整 SD 打包 → 备用卡启动 → 一项配置修改与裁剪对比。随后推进 RKNN、ROS 2 模拟闭环、MCU 协同与恢复测试。
+已完成内核/DTB 云端构建 → U-Boot、内核模块与 Buildroot rootfs → 完整 SD 打包 → 备用卡启动 → 一项配置修改与裁剪对比。随后推进 RKNN、ROS 2 模拟闭环、MCU 协同与恢复测试。
 
 每次实验记录：改了什么、为什么改、怎么验证、失败怎么回退。
 
