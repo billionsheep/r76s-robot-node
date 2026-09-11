@@ -1,0 +1,17 @@
+{
+  "kernel_repository": "https://github.com/friendlyarm/kernel-rockchip.git",
+  "kernel_commit": "8204040dbbf207d8dc40ecbd38586f30f87ceda9",
+  "kernel_commit_time": "2026-07-28T10:03:57Z",
+  "kernel_defconfig": "nanopi5_linux_defconfig",
+  "kernel_fragment": "kvm.config",
+  "dtb_target": "rockchip/rk3576-nanopi5-rev02.dtb",
+  "dtb_model": "FriendlyElec NanoPi R76S",
+  "dtb_compatible": "friendlyelec,nanopi-r76s",
+  "toolchain_repository": "friendlyarm/prebuilts",
+  "toolchain_commit": "89497f3d36b1e9d632fcc326cab69dc2355a1358",
+  "toolchain_path": "gcc-x64/toolchain-11.3-aarch64.tar.xz",
+  "toolchain_git_blob_sha1": "5c01a4c3702d39c0ee88cb5ce23a7e310aab61d2",
+  "buildroot_manifest_repository": "friendlyarm/buildroot_manifests",
+  "buildroot_manifest_commit": "d4440550387225b35ec32dbf4c6b650a1661b613",
+  "buildroot_manifest_path": "rk3576.xml"
+}
