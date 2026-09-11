@@ -9,12 +9,13 @@
 - [学习路线与真实进度](docs/learning/00-progress.md)
 - [已学知识的关系图解](docs/learning/01-system-map.md)
 - [免费云端构建：操作、资源与产物](docs/learning/02-cloud-build.md)
+- [第一次云端构建结果与修复记录](docs/learning/03-first-cloud-build.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
 ## 当前正在做什么
 
-官方 Ubuntu noble-core 已在板上启动，edge-agent 0.1.0 已在该系统原生编译、运行。现在建立首轮免费云端构建：
+官方 Ubuntu noble-core 已在板上启动，edge-agent 0.1.0 已在该系统原生编译、运行。首轮免费 Learning CI 已通过，ARM64 产物下载校验通过；官方内核/DTB 任务已启动，结果待完成：
 
 | 工作流 | 作用 | 触发方式 |
 | --- | --- | --- |
