@@ -26,7 +26,7 @@ jobs:
       - name: Install cloud cross compiler
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu libc6-dev-arm64-cross
       - name: Compile and verify
         shell: bash
         run: |
