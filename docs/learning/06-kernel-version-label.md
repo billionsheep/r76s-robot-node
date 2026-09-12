@@ -2,7 +2,7 @@
 
 日期：2026-09-12。北大编译课程在另一份笔记学习；本节继续 R76S 自建系统主线。
 
-**状态：配置与脚本已准备，等待用户启动云端构建。下文的新版本号为预期结果，尚未验证。** 本节不在 Mac 编译，也不刷卡。
+**状态：手动构建已成功，产物下载及新旧配置对照通过。** 实际生成 `6.1.141-r76s-study1`；Mac 只下载检查，未编译或刷卡。下方保留原有操作步骤供复现，真实结果见本节末尾。
 
 ## 我们现在为什么改这一行
 
@@ -80,3 +80,45 @@ CONFIG_LOCALVERSION="-r76s-study1"
 后续构建和安装内核模块要匹配这份内核，不能只拿旧 6.1.141 模块来拼装。完成本次配置与产物对照后，继续补 U-Boot、模块与 Buildroot rootfs，最后打包 SD 镜像。
 
 回退配置时，把片段改回 `CONFIG_LOCALVERSION=""` 后重新构建。当前没有板端变化，不需要重刷恢复。
+
+## 2026-09-12：按真实日志完成验收
+
+[成功运行 34666871155](https://github.com/billionsheep/r76s-robot-node/actions/runs/34666871155)，触发类型 `workflow_dispatch`，运行采用提交 `9fca989876166390939978a7b38d9bf9010c9366`。任务北京时间 10:09:27—10:20:59，共 11 分 32 秒；其中 make 编译 10 分 9.11 秒。代理核对时任务已完成，没有再次触发。
+
+打开 [kernel 任务日志](https://github.com/billionsheep/r76s-robot-node/actions/runs/34666871155/job/103480437693)，每个步骤对应一项职责：
+
+| 日志步骤 | 这台云端机器在做什么 |
+| --- | --- |
+| Set up job | 准备这次任务的执行环境 |
+| actions/checkout | 取出本次提交的项目文件，包括工作流调用的脚本与配置 |
+| Install cloud build dependencies | 在云端安装所需工具和开发依赖 |
+| Build official kernel and R76S device tree | 执行我们的 build-kernel.sh；下载内核源码、合入配置、编译、整理结果 |
+| Save build outputs and diagnostics | 上传 artifacts 目录，供用户下载 |
+
+在 Build 步骤里，实际出现：
+
+```text
+Merging ./arch/arm64/configs/r76s-study.config
+Previous value: CONFIG_LOCALVERSION=""
+New value: CONFIG_LOCALVERSION="-r76s-study1"
+```
+
+这里的 Previous/New 表示项目配置覆盖了原来的空后缀，是本实验想要的变化，不是报错。
+
+下载后的两份完整 `kernel.config` 逐行对比，唯一差异为：
+
+```diff
+-CONFIG_LOCALVERSION=""
++CONFIG_LOCALVERSION="-r76s-study1"
+```
+
+`kernelrelease.txt` 实际为 `6.1.141-r76s-study1`；解压后的内核二进制也包含这个 Linux 版本标识。因此本次不仅保留了配置文件，还确认标识进入了生成的内核。
+
+其他核对结果：
+
+- 五项 SHA-256 与下载清单一致，输入片段与仓库文件一致；gzip 完整性、ARM64 内核文件标识通过。
+- DTB 与首轮已经验证过的 R76S DTB 逐字节相同；本次只改版本配置，没有更改硬件描述。
+- `Image.gz` 为 13,442,161 bytes，SHA-256 为 `6537a61f3ef2da445e792e76bfa93e6c08a0dd551956e993cd8d663c5dd60cac`。
+- 云端产物到期时间为 2026-09-13 02:20:56 UTC，已保存本地副本。
+
+现在已经形成一条可查看的证据链：仓库的一行输入 → 配置合并日志 → 完整配置的单行差异 → 新内核的版本标识。完整 SD 镜像和板端启动仍待后续，下一项组件为 U-Boot/启动固件链。

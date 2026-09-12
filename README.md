@@ -29,7 +29,7 @@
 
 ## 接下来
 
-当前先做一次可见的配置实验：`CONFIG_LOCALVERSION="-r76s-study1"` 已准备，由用户在现有内核工作流选择 main 手动启动。新版本构建与产物对照尚未完成，步骤见 [版本标识实验](docs/learning/06-kernel-version-label.md)。
+版本配置实验已通过：手动运行生成 `6.1.141-r76s-study1`，完整配置对照只有一行差异，新内核二进制标识及下载校验通过。先沿 [实际日志和结果](docs/learning/06-kernel-version-label.md) 理解这次构建，再接 U-Boot/启动固件链。
 
 已完成内核/DTB 云端构建 → U-Boot、内核模块与 Buildroot rootfs → 完整 SD 打包 → 备用卡启动 → 一项配置修改与裁剪对比。随后推进 RKNN、ROS 2 模拟闭环、MCU 协同与恢复测试。
 
