@@ -14,6 +14,7 @@
 - [看实际代码：这一次究竟怎样编译](docs/learning/05-read-the-real-build.md)
 - [已完成实验：内核版本标识与真实结果](docs/learning/06-kernel-version-label.md)
 - [当前学习：U-Boot 的目录、配置、命令与产物](docs/learning/07-uboot-source-to-output.md)
+- [当前动手入口：逐文件阅读 U-Boot 工作流](docs/learning/08-uboot-workflow.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
@@ -25,12 +26,13 @@
 | --- | --- | --- |
 | Learning CI | 检查程序行为，交叉编译 ARM64 程序 | 程序变化或手动 |
 | R76S kernel and DTB | 使用厂商工具链和配置编译内核 Image、R76S 设备树 | 手动 |
+| R76S U-Boot and loader | 编译 U-Boot 并组合固定版本启动固件；文件已准备，首轮运行待执行 | 手动 |
 
 实际结果以 Actions 运行记录为准。内核和 DTB 只是系统镜像的一部分；完整 SD 镜像、重新刷卡及自建系统启动尚未完成。
 
 ## 接下来
 
-版本配置实验已通过：手动运行生成 `6.1.141-r76s-study1`，完整配置对照只有一行差异，新内核二进制标识及下载校验通过。当前进入 [U-Boot 源码导读](docs/learning/07-uboot-source-to-output.md)：已核对 RK3576 专用脚本的 `nanopi_m5` 配置、固件清单与产物复制规则，尚未开始 U-Boot 编译。
+版本配置实验已通过：手动运行生成 `6.1.141-r76s-study1`，完整配置对照只有一行差异，新内核二进制标识及下载校验通过。U-Boot 的手动工作流、脚本和固定输入已准备；先沿 [逐文件说明](docs/learning/08-uboot-workflow.md) 阅读，再由用户手动启动。静态及固件输入预检查通过，首轮 U-Boot 编译和产物验证尚未执行。
 
 已完成内核/DTB 云端构建 → U-Boot、内核模块与 Buildroot rootfs → 完整 SD 打包 → 备用卡启动 → 一项配置修改与裁剪对比。随后推进 RKNN、ROS 2 模拟闭环、MCU 协同与恢复测试。
 

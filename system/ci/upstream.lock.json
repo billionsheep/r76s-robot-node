@@ -13,5 +13,23 @@
   "toolchain_git_blob_sha1": "5c01a4c3702d39c0ee88cb5ce23a7e310aab61d2",
   "buildroot_manifest_repository": "friendlyarm/buildroot_manifests",
   "buildroot_manifest_commit": "d4440550387225b35ec32dbf4c6b650a1661b613",
-  "buildroot_manifest_path": "rk3576.xml"
+  "buildroot_manifest_path": "rk3576.xml",
+  "uboot_repository": "https://github.com/friendlyarm/uboot-rockchip.git",
+  "uboot_commit": "c5c053fa55742c454a01f1580ecaea7ccb6841fb",
+  "uboot_commit_time": "2026-07-08T07:21:39Z",
+  "uboot_board": "nanopi_m5",
+  "rkbin_repository": "https://github.com/friendlyarm/rkbin.git",
+  "rkbin_commit": "449f9ffceaadd2a7bcc4847c5903f563f601d49e",
+  "uboot_loader_ini": "RKBOOT/NANOPIM5MINIALL.ini",
+  "uboot_trust_ini": "RKTRUST/RK3576TRUST.ini",
+  "uboot_loader_output": "rk3576_loader_v1.13.109.bin",
+  "uboot_idblock_output": "rk3576_idblock_v1.13.109.img",
+  "uboot_firmware_inputs": [
+    "bin/rk35/rk3576_ddr_lp4_1866MHz_lp5_2736MHz_v1.13.bin",
+    "bin/rk35/nanopi_m5_usbplug.bin",
+    "bin/rk35/rk3576_boost_v1.03.bin",
+    "bin/rk35/nanopi_m5_spl-dtb.bin",
+    "bin/rk35/rk3576_bl31_v1.24.elf",
+    "bin/rk35/rk3576_bl32_v1.10.bin"
+  ]
 }

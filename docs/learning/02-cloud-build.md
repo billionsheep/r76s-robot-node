@@ -2,10 +2,11 @@
 
 仓库使用公开仓库的标准 `ubuntu-22.04` x64 运行器。计算资源免费；不启用付费 larger runner、云服务器或付费缓存。产物只保留一天，源码和学习记录长期保留。GitHub 的产物存储有独立额度，计算免费不代表无限存储。
 
-## 两条工作流
+## 三条工作流
 
 1. **Learning CI**：修改程序后自动触发，也可手动运行。检查 Linux 上真实 uptime 与写入失败，交叉编译 ARM64 程序，生成校验文件。ARM64 文件编译通过不代表已在板子运行。
 2. **R76S kernel and DTB**：手动运行，固定厂商内核提交和 GCC 11.3 工具链，使用 `nanopi5_linux_defconfig` 与 `kvm.config`，实际构建 `Image` 和 `rockchip/rk3576-nanopi5-rev02.dtb`。2026-09-12 起，当前脚本追加本项目 `r76s-study.config` 设置学习版本后缀；运行 `34666871155` 已通过实际构建与产物核对，见 [当前实验](06-kernel-version-label.md)。
+3. **R76S U-Boot and loader**：手动入口已准备，固定 U-Boot/rkbin 提交，使用 nanopi_m5 配置并组合厂商预编译固件。语法与输入预检查通过，首轮云端编译尚未执行；先看 [逐文件说明](08-uboot-workflow.md)。
 
 R76S 的 DTS 文件名虽然带 `nanopi5-rev02`，其中明确声明 `FriendlyElec NanoPi R76S` 和 `friendlyelec,nanopi-r76s`。流水线会读取编译后的 DTB 检查这两个属性，避免根据文件名猜板型。
 
