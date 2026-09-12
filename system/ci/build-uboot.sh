@@ -131,7 +131,8 @@ cp uboot.img "$IDBLOCK" u-boot.dtb "$OUT/"
 # 与厂商 update_uboot_bin.sh 一样，仅给 Loader 复制件使用统一文件名。
 cp "$LOADER" "$OUT/MiniLoaderAll.bin"
 cp include/config/uboot.release "$OUT/uboot-release.txt"
-cp u-boot.its "$OUT/uboot.its"
+# 厂商 fit_gen_uboot_itb 在打包后将 ITS 移到 fit/，原路径已不存在。
+cp fit/u-boot.its "$OUT/uboot.its"
 cat > "$OUT/README.txt" <<EOF
 U-Boot source: https://github.com/friendlyarm/uboot-rockchip/tree/$(read_lock uboot_commit)
 Corresponding source: https://github.com/friendlyarm/uboot-rockchip/archive/$(read_lock uboot_commit).tar.gz
