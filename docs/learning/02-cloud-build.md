@@ -5,7 +5,7 @@
 ## 两条工作流
 
 1. **Learning CI**：修改程序后自动触发，也可手动运行。检查 Linux 上真实 uptime 与写入失败，交叉编译 ARM64 程序，生成校验文件。ARM64 文件编译通过不代表已在板子运行。
-2. **R76S kernel and DTB**：手动运行，固定厂商内核提交和 GCC 11.3 工具链，使用 `nanopi5_linux_defconfig` 与 `kvm.config`，实际构建 `Image` 和 `rockchip/rk3576-nanopi5-rev02.dtb`。
+2. **R76S kernel and DTB**：手动运行，固定厂商内核提交和 GCC 11.3 工具链，使用 `nanopi5_linux_defconfig` 与 `kvm.config`，实际构建 `Image` 和 `rockchip/rk3576-nanopi5-rev02.dtb`。2026-09-12 起，当前脚本追加本项目 `r76s-study.config` 设置学习版本后缀；新构建尚未执行，见 [当前实验](06-kernel-version-label.md)。
 
 R76S 的 DTS 文件名虽然带 `nanopi5-rev02`，其中明确声明 `FriendlyElec NanoPi R76S` 和 `friendlyelec,nanopi-r76s`。流水线会读取编译后的 DTB 检查这两个属性，避免根据文件名猜板型。
 

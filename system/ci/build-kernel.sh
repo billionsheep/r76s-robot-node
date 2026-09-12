@@ -60,7 +60,11 @@ export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 export KBUILD_BUILD_USER=builder KBUILD_BUILD_HOST=github-actions KBUILD_BUILD_VERSION=1
 export KBUILD_BUILD_TIMESTAMP="$(read_lock kernel_commit_time)"
 touch work/kernel/.scmversion
-make -C work/kernel "$(read_lock kernel_defconfig)" "$(read_lock kernel_fragment)" 2>&1 | tee artifacts/configure.log
+# 最后合入我们自己的配置片段，给产物增加可辨认的学习版本标识。
+cp system/ci/r76s-study.config work/kernel/arch/arm64/configs/r76s-study.config
+make -C work/kernel "$(read_lock kernel_defconfig)" "$(read_lock kernel_fragment)" r76s-study.config 2>&1 | tee artifacts/configure.log
+grep '^CONFIG_LOCALVERSION=' work/kernel/.config
+cp system/ci/r76s-study.config artifacts/
 cp work/kernel/.config artifacts/kernel.config
 snapshot >> artifacts/resources.txt
 /usr/bin/time -v -o "$ROOT/artifacts/compile-time.txt" \
@@ -73,18 +77,18 @@ fdtget "$DTB" / model > artifacts/dtb-model.txt
 fdtget "$DTB" / compatible > artifacts/dtb-compatible.txt
 test -s work/kernel/arch/arm64/boot/Image
 gzip -n -c -9 work/kernel/arch/arm64/boot/Image > artifacts/Image.gz
-make -s -C work/kernel kernelrelease > artifacts/kernelrelease.txt
+make -s -C work/kernel kernelrelease | tee artifacts/kernelrelease.txt
 cp work/kernel/COPYING artifacts/KERNEL-COPYING
 cp work/kernel/LICENSES/preferred/GPL-2.0 artifacts/KERNEL-GPL-2.0
 cat > artifacts/README.txt <<EOF
 Official kernel source: https://github.com/friendlyarm/kernel-rockchip/tree/$KERNEL_COMMIT
 Corresponding source archive: https://github.com/friendlyarm/kernel-rockchip/archive/$KERNEL_COMMIT.tar.gz
-Configuration: kernel.config; exact input revisions: upstream.lock.json.
+Configuration: kernel.config; project fragment: r76s-study.config; upstream revisions: upstream.lock.json.
 This artifact contains Image.gz and an R76S DTB, not a bootable SD image.
 U-Boot, DDR firmware, kernel modules, rootfs and SD layout are not included.
 No board boot or hardware function has been verified by this cloud build.
 Do not overwrite the working board kernel with these incomplete components.
 GNU time maximum RSS is not the aggregate peak of all parallel compiler processes.
 EOF
-(cd artifacts && sha256sum Image.gz *.dtb kernel.config upstream.lock.json > SHA256SUMS)
+(cd artifacts && sha256sum Image.gz *.dtb kernel.config r76s-study.config upstream.lock.json > SHA256SUMS)
 printf 'Build completed: kernel Image and verified R76S DTB.\n'

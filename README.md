@@ -12,6 +12,7 @@
 - [免费云端构建：操作、资源与产物](docs/learning/02-cloud-build.md)
 - [第一次云端构建结果与修复记录](docs/learning/03-first-cloud-build.md)
 - [看实际代码：这一次究竟怎样编译](docs/learning/05-read-the-real-build.md)
+- [当前动手步骤：给内核加版本标识并启动构建](docs/learning/06-kernel-version-label.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
@@ -27,6 +28,8 @@
 实际结果以 Actions 运行记录为准。内核和 DTB 只是系统镜像的一部分；完整 SD 镜像、重新刷卡及自建系统启动尚未完成。
 
 ## 接下来
+
+当前先做一次可见的配置实验：`CONFIG_LOCALVERSION="-r76s-study1"` 已准备，由用户在现有内核工作流选择 main 手动启动。新版本构建与产物对照尚未完成，步骤见 [版本标识实验](docs/learning/06-kernel-version-label.md)。
 
 已完成内核/DTB 云端构建 → U-Boot、内核模块与 Buildroot rootfs → 完整 SD 打包 → 备用卡启动 → 一项配置修改与裁剪对比。随后推进 RKNN、ROS 2 模拟闭环、MCU 协同与恢复测试。
 
