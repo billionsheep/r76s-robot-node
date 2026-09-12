@@ -1,8 +1,8 @@
 # 把 U-Boot 接入我们的仓库：逐文件看清如何构建
 
-日期：2026-09-12。**当前状态：首轮已完成编译与打包，但整理 ITS 文件时失败；路径修复已准备，完整验证待重跑。尚无板端启动结果。** 下方保留准备阶段的逐文件说明，真实运行记录见文末。
+日期：2026-09-12。**当前状态：修复 ITS 收集路径后，运行 34682638581 成功；27 项下载校验与 FIT 内六个组件的数据哈希检查通过。尚无完整 SD 镜像或板端启动结果。** 下方保留准备阶段的逐文件说明，真实运行记录见文末。
 
-上一节看的是厂商文件；这节新增我们自己的调用入口。没有在 Mac 编译，也没有启动 GitHub 任务。
+上一节看的是厂商文件；这节新增我们自己的调用入口。准备阶段未启动任务；随后用户要求继续，本次由代理调用手动工作流并完成验证，全程未在 Mac 编译。
 
 ## 在仓库里找到三个位置
 
@@ -159,3 +159,35 @@ cd "$ROOT/work/uboot"
 核对 [固定厂商脚本](https://github.com/friendlyarm/uboot-rockchip/blob/c5c053fa55742c454a01f1580ecaea7ccb6841fb/scripts/fit-core.sh#L395-L396) 发现：打包完成后，它把 `u-boot.its` 移到 `fit/`。修复将复制源改成 `fit/u-boot.its`，没有修改 U-Boot 源码、配置、编译器或固件版本。
 
 这说明排错要先找失败阶段：下载 → 配置 → 编译 → 打包 → 检查/收集。此次失败在最后的文件收集，不能据此说编译器或 RK3576 配置出错，也不能把失败的工作流写成全部验证成功。接着用修复后的同一流程重新运行。
+
+## 修复后运行：用真实产物完成本节
+
+[成功运行 34682638581](https://github.com/billionsheep/r76s-robot-node/actions/runs/34682638581) 使用提交 `1bfefd5da9e2fa517b6d007fb01b7075ad20cad6`。任务北京时间 16:11:41—16:12:57，共 1 分 16 秒；构建脚本 59 秒，其中厂商 make.sh 编译与打包 46.21 秒。环境中 nproc 为 4、内存总量 15,988 MiB，结束时 work 目录 732 MiB；这些不是完整 SDK 的资源需求或内存峰值。
+
+在 [uboot 任务日志](https://github.com/billionsheep/r76s-robot-node/actions/runs/34682638581/job/103523982110) 中，可找到这些真实行：
+
+```text
+  CC      board/rockchip/nanopi_m5/board.o
+  CC      board/rockchip/nanopi_m5/hwrev.o
+  LD      u-boot
+Image(no-signed, version=0): uboot.img (FIT with uboot, trust...) is ready
+```
+
+`CC` 是把对应 C 源文件编译成目标文件的进度，`.o` 是随后参与链接的中间文件；`LD` 将这些目标文件与所需库链接成 U-Boot 程序；后续打包再将程序与厂商固件组合成 uboot.img。因此“源码编译、组件打包、产物收集”是三个可以分别成功或失败的步骤。
+
+主要实际产物：
+
+| 文件 | 实际大小 | 本轮检查 |
+| --- | --- | --- |
+| uboot.img | 4,194,304 bytes（4 MiB） | FIT 结构、配置引用及六个子镜像 SHA-256 通过 |
+| MiniLoaderAll.bin | 838,137 bytes | 固定来源、非空、下载 SHA-256 通过 |
+| rk3576_idblock_v1.13.109.img | 413,696 bytes | 非空、下载 SHA-256 通过，与首轮逐字节相同 |
+| u-boot.dtb | 9,923 bytes | 下载 SHA-256 通过，与首轮逐字节相同；它是 U-Boot DTB |
+
+最终 uboot.config 明确启用 ARM64、RK3576、NANOPI_M5 与 FIT 打包，Loader INI 为 NANOPIM5MINIALL.ini。固件输入清单与本地预检查的六个文件相符；全部 27 项交付文件 SHA-256 一致，许可证随产物保留。
+
+uboot.img 本轮 SHA-256：`4306e26e22a22593d27c094972e0f6b3b1b7ca68718967e92f5df1a966ae1d17`。Actions 产物保留至 2026-09-13 08:12:55 UTC，已保存本地副本。
+
+两轮最终配置、IDBlock、U-Boot DTB 相同；FIT 中六个子镜像逐字节相同，且分别用实际数据重算哈希通过。外层 uboot.img 有 10 个字节不同，位于两份 FIT 的内存保留表地址字段；MiniLoaderAll.bin 的差异是头部与末尾共 6 个字节。当前不承诺整包逐字节可复现，没有为此修改厂商打包工具。此处 FIT 结构核对依据 [DTB 格式](https://devicetree-specification.readthedocs.io/en/stable/flattened-format.html)；格式检查和哈希检查不替代板端启动。
+
+本节技术验收完成：源码/配置 → 云端编译 → 打包 → 下载核验已有证据。没有刷卡、重启或修改 R76S；完整 SD 镜像还需匹配的内核模块、Buildroot rootfs 和板级布局。下一步沿这些已有组件继续组装系统，用户理解与实机验收分别记录。
