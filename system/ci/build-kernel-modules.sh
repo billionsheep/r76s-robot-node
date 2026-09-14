@@ -20,6 +20,8 @@ test -s "$KERNEL/modules.order"
 grep -qx 'CONFIG_MODULE_COMPRESS_NONE=y' "$KERNEL/.config"
 RELEASE=$(make -s -C "$KERNEL" kernelrelease)
 test "$RELEASE" = "$(cat artifacts/kernelrelease.txt)"
+# 查询目标目录和目标版本，避免旧版 kmod 混入运行器的同名内置模块信息。
+target_modinfo() { modinfo -b "$STAGE" -k "$RELEASE" "$@"; }
 # 使用一次性目录，防止把其他版本或上次残留模块混入本次交付。
 test ! -e "$STAGE"
 mkdir -p "$STAGE" "$OUT"
@@ -49,18 +51,31 @@ if [[ -s "$OUT/depmod.log" ]]; then
 fi
 test -s "$MODULE_DIR/modules.dep"
 test -s "$MODULE_DIR/modules.alias"
-modinfo "$MODULE_DIR/extra/r8125.ko" > "$OUT/r8125-modinfo.txt"
+target_modinfo "$MODULE_DIR/extra/r8125.ko" > "$OUT/r8125-modinfo.txt"
+# 留下首轮 seqiv 检查失败的对照证据：宿主查询、目标查询和 ELF 原始字段。
+if [[ -f "$MODULE_DIR/kernel/crypto/seqiv.ko" ]]; then
+    {
+        modinfo --version
+        printf 'runner_release=%s\n' "$(uname -r)"
+        printf 'host_context_vermagic:\n'
+        modinfo -F vermagic "$MODULE_DIR/kernel/crypto/seqiv.ko" || printf 'host_query_failed=%s\n' "$?"
+        printf 'target_context_vermagic:\n'
+        target_modinfo -F vermagic "$MODULE_DIR/kernel/crypto/seqiv.ko"
+        "${CROSS_COMPILE}readelf" -p .modinfo "$MODULE_DIR/kernel/crypto/seqiv.ko"
+    } > "$OUT/modinfo-context.txt" 2>&1
+fi
 printf 'path\tname\tvermagic\n' > "$OUT/modules.tsv"
 COUNT=0
 while IFS= read -r -d '' module; do
-    vermagic=$(modinfo -F vermagic "$module")
+    vermagic=$(target_modinfo -F vermagic "$module")
     if [[ "${vermagic%% *}" != "$RELEASE" ]]; then
         printf 'Module release mismatch: %s: %s\n' "$module" "$vermagic" >&2
+        cp "$module" "$OUT/failed-module.ko"
         exit 1
     fi
     # readelf 检查文件架构，不执行目标 ARM64 代码。
     "${CROSS_COMPILE}readelf" -h "$module" | grep -Eq 'Machine:.*AArch64'
-    printf '%s\t%s\t%s\n' "${module#"$STAGE/"}" "$(modinfo -F name "$module")" "$vermagic" >> "$OUT/modules.tsv"
+    printf '%s\t%s\t%s\n' "${module#"$STAGE/"}" "$(target_modinfo -F name "$module")" "$vermagic" >> "$OUT/modules.tsv"
     COUNT=$((COUNT + 1))
 done < <(find "$MODULE_DIR" -type f -name '*.ko' -print0 | sort -z)
 test "$COUNT" -gt 1
