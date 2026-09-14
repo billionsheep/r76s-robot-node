@@ -68,7 +68,7 @@ cp system/ci/r76s-study.config artifacts/
 cp work/kernel/.config artifacts/kernel.config
 snapshot >> artifacts/resources.txt
 /usr/bin/time -v -o "$ROOT/artifacts/compile-time.txt" \
-    make -C work/kernel -j"$(nproc)" Image "$(read_lock dtb_target)" 2>&1 | tee artifacts/compile.log
+    make -C work/kernel -j"$(nproc)" Image "$(read_lock dtb_target)" modules 2>&1 | tee artifacts/compile.log
 DTB="work/kernel/arch/arm64/boot/dts/$(read_lock dtb_target)"
 test "$(fdtget "$DTB" / model)" = "$(read_lock dtb_model)"
 fdtget "$DTB" / compatible | grep -Fq "$(read_lock dtb_compatible)"
@@ -78,17 +78,20 @@ fdtget "$DTB" / compatible > artifacts/dtb-compatible.txt
 test -s work/kernel/arch/arm64/boot/Image
 gzip -n -c -9 work/kernel/arch/arm64/boot/Image > artifacts/Image.gz
 make -s -C work/kernel kernelrelease | tee artifacts/kernelrelease.txt
+# 使用同一次内核构建的配置和符号信息收集模块，包含独立仓库的 r8125。
+bash system/ci/build-kernel-modules.sh 2>&1 | tee artifacts/modules-build.log
 cp work/kernel/COPYING artifacts/KERNEL-COPYING
 cp work/kernel/LICENSES/preferred/GPL-2.0 artifacts/KERNEL-GPL-2.0
 cat > artifacts/README.txt <<EOF
 Official kernel source: https://github.com/friendlyarm/kernel-rockchip/tree/$KERNEL_COMMIT
 Corresponding source archive: https://github.com/friendlyarm/kernel-rockchip/archive/$KERNEL_COMMIT.tar.gz
 Configuration: kernel.config; project fragment: r76s-study.config; upstream revisions: upstream.lock.json.
-This artifact contains Image.gz and an R76S DTB, not a bootable SD image.
-U-Boot, DDR firmware, kernel modules, rootfs and SD layout are not included.
+This artifact contains Image.gz, an R76S DTB and matching kernel modules, not a bootable SD image.
+modules/ includes in-tree modules and r8125; see its README.txt and checksums.
+U-Boot, DDR firmware, rootfs and SD layout are not included.
 No board boot or hardware function has been verified by this cloud build.
 Do not overwrite the working board kernel with these incomplete components.
 GNU time maximum RSS is not the aggregate peak of all parallel compiler processes.
 EOF
-(cd artifacts && sha256sum Image.gz *.dtb kernel.config r76s-study.config upstream.lock.json > SHA256SUMS)
-printf 'Build completed: kernel Image and verified R76S DTB.\n'
+(cd artifacts && sha256sum Image.gz *.dtb kernel.config r76s-study.config upstream.lock.json kernelrelease.txt modules/* > SHA256SUMS)
+printf 'Build completed: kernel Image, verified R76S DTB and matching modules.\n'

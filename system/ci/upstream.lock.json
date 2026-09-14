@@ -7,6 +7,8 @@
   "dtb_target": "rockchip/rk3576-nanopi5-rev02.dtb",
   "dtb_model": "FriendlyElec NanoPi R76S",
   "dtb_compatible": "friendlyelec,nanopi-r76s",
+  "r8125_repository": "https://github.com/friendlyarm/r8125.git",
+  "r8125_commit": "3fda70ebcba22f281ec4e3a69c355992c8823fc0",
   "toolchain_repository": "friendlyarm/prebuilts",
   "toolchain_commit": "89497f3d36b1e9d632fcc326cab69dc2355a1358",
   "toolchain_path": "gcc-x64/toolchain-11.3-aarch64.tar.xz",

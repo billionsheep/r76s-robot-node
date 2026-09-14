@@ -1,4 +1,4 @@
-name: R76S kernel and DTB
+name: R76S kernel, DTB and modules
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends build-essential bc bison flex \
             libssl-dev libelf-dev libncurses-dev device-tree-compiler cpio lz4 \
-            xz-utils curl git time
-      - name: Build official kernel and R76S device tree
+            xz-utils curl git time kmod
+      - name: Build kernel, R76S device tree and matching modules
         shell: bash
         run: bash system/ci/build-kernel.sh
       - name: Save build outputs and diagnostics

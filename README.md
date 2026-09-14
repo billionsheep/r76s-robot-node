@@ -15,6 +15,7 @@
 - [已完成实验：内核版本标识与真实结果](docs/learning/06-kernel-version-label.md)
 - [当前学习：U-Boot 的目录、配置、命令与产物](docs/learning/07-uboot-source-to-output.md)
 - [当前动手入口：逐文件阅读 U-Boot 工作流](docs/learning/08-uboot-workflow.md)
+- [当前实验：把匹配模块放进未来 rootfs](docs/learning/09-kernel-modules.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
@@ -25,12 +26,14 @@
 | 工作流 | 作用 | 触发方式 |
 | --- | --- | --- |
 | Learning CI | 检查程序行为，交叉编译 ARM64 程序 | 程序变化或手动 |
-| R76S kernel and DTB | 使用厂商工具链和配置编译内核 Image、R76S 设备树 | 手动 |
+| R76S kernel, DTB and modules | 编译内核 Image、R76S 设备树及匹配模块，含 r8125 | 手动 |
 | R76S U-Boot and loader | 编译 U-Boot 并组合固定版本启动固件；运行与下载验证已通过 | 手动 |
 
 实际结果以 Actions 运行记录为准。内核和 DTB 只是系统镜像的一部分；完整 SD 镜像、重新刷卡及自建系统启动尚未完成。
 
 ## 接下来
+
+2026-09-14：已接入树内模块及固定版本 r8125 的编译、安装和打包，正在进行 [匹配模块实验](docs/learning/09-kernel-modules.md)。新脚本的真实云端与下载结果待验证。
 
 版本配置实验与 U-Boot 云端构建均已通过。U-Boot 首轮在收集 ITS 文件时失败，修正路径后运行 `34682638581` 成功，任务 1 分 16 秒；27 项下载校验和 FIT 内六个组件的数据哈希检查通过。先沿 [真实日志与结果](docs/learning/08-uboot-workflow.md) 理解编译、打包与文件收集，再补匹配模块和 Buildroot rootfs。
 
