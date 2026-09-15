@@ -16,6 +16,7 @@
 - [当前学习：U-Boot 的目录、配置、命令与产物](docs/learning/07-uboot-source-to-output.md)
 - [当前动手入口：逐文件阅读 U-Boot 工作流](docs/learning/08-uboot-workflow.md)
 - [当前实验：把匹配模块放进未来 rootfs](docs/learning/09-kernel-modules.md)
+- [第一次 Buildroot rootfs：目录、配置和检查](docs/learning/10-buildroot-rootfs.md)
 - [第一个 C 程序 edge-agent](edge-agent/README.md)
 - [查看 Actions](https://github.com/billionsheep/r76s-robot-node/actions)
 
@@ -28,10 +29,13 @@
 | Learning CI | 检查程序行为，交叉编译 ARM64 程序 | 程序变化或手动 |
 | R76S kernel, DTB and modules | 编译内核 Image、R76S 设备树及匹配模块，含 r8125 | 手动 |
 | R76S U-Boot and loader | 编译 U-Boot 并组合固定版本启动固件；运行与下载验证已通过 | 手动 |
+| Buildroot AArch64 rootfs lab | Buildroot 2026.08 自建 glibc/C++ 工具链，生成 BusyBox/Dropbear ext4 rootfs | 手动 |
 
 实际结果以 Actions 运行记录为准。内核和 DTB 只是系统镜像的一部分；完整 SD 镜像、重新刷卡及自建系统启动尚未完成。
 
 ## 接下来
+
+2026-09-15：新增独立的 [Buildroot rootfs 实验](docs/learning/10-buildroot-rootfs.md)，本轮验收仅为可检查的 AArch64 rootfs.ext4；构建结果待核对。它不依赖上一轮模块结果，不修改现有三个工作流，不组成完整 R76S SD 镜像。
 
 2026-09-14：已接入树内模块及固定版本 r8125 的编译、安装和打包，正在进行 [匹配模块实验](docs/learning/09-kernel-modules.md)。新脚本的真实云端与下载结果待验证。
 

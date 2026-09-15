@@ -1,0 +1,65 @@
+name: Buildroot AArch64 rootfs lab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: buildroot-rootfs-lab
+  cancel-in-progress: false
+
+jobs:
+  rootfs:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install build and inspection tools
+        id: dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          {
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends build-essential \
+              bc bison flex cpio rsync unzip wget curl git file binutils \
+              libncurses-dev libssl-dev python3 perl xz-utils bzip2 patch \
+              e2fsprogs time
+          } 2>&1 | tee artifacts/dependencies.log
+      - name: Fetch pinned Buildroot 2026.08
+        id: prepare
+        run: bash system/ci/build-buildroot-rootfs.sh prepare
+      - name: Configure AArch64 glibc BusyBox and Dropbear
+        id: configure
+        run: bash system/ci/build-buildroot-rootfs.sh configure
+      - name: Build toolchain and rootfs
+        id: build
+        run: bash system/ci/build-buildroot-rootfs.sh build
+      - name: Inspect target files and ext4 contents
+        id: inspect
+        run: bash system/ci/build-buildroot-rootfs.sh inspect
+      - name: Record result and checksums even on failure
+        if: always()
+        env:
+          DEPENDENCIES_RESULT: ${{ steps.dependencies.outcome }}
+          PREPARE_RESULT: ${{ steps.prepare.outcome }}
+          CONFIGURE_RESULT: ${{ steps.configure.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          INSPECT_RESULT: ${{ steps.inspect.outcome }}
+        run: bash system/ci/build-buildroot-rootfs.sh collect
+      - name: Upload rootfs and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: buildroot-rootfs-${{ github.run_id }}
+          path: artifacts/
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error

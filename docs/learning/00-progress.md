@@ -4,6 +4,8 @@
 
 当前分工：Mac 编辑和连接设备，GitHub Actions 云端编译，R76S 验证运行。Windows QEMU 是可选辅助。无需先换 RK3588。
 
+2026-09-15 用户明确指定本轮成果：[Buildroot 2026.08 AArch64 rootfs 实验](10-buildroot-rootfs.md)。独立手动工作流和 defconfig 已准备，真实 GitHub 构建与文件检查待执行。本轮不接入内核/模块/U-Boot，不刷卡；下方较早进度保留为历史记录。
+
 2026-09-14 当前实验：[匹配模块构建](09-kernel-modules.md)。用户完成 DTB 导读接续，现有工作流追加 modules 并构建固定版本 r8125；脚本已准备，真实构建和下载检查待执行。之前的 U-Boot/DTB 记录保留，尚无完整 SD 镜像或自建系统上板。
 
 当前学习：[对照 U-Boot 真实日志与产物](08-uboot-workflow.md)。首轮编译打包成功，收集 ITS 文件时失败；修正路径后运行 `34682638581` 全部成功，27 项下载校验和 FIT 内六个组件数据哈希检查通过。用户要求继续后由代理调用手动入口，没有在 Mac 编译或刷卡。内核版本实验已生成 `6.1.141-r76s-study1`，下一步补匹配模块与 Buildroot rootfs，尚无完整 SD 镜像。
