@@ -43,10 +43,16 @@ Buildroot 用 ext2 家族统一构建规则生成实际为 ext4 的 `rootfs.ext2
 
 成功后的 Artifact 至少包含 `rootfs.ext4`、`.config`、`defconfig`、`build-info.txt`、`SHA256SUMS`，另有各阶段日志、还原后的 `resolved_defconfig` 与检查结果。产物保留一天，需及时下载。
 
-检查程序用 file/readelf 核对 BusyBox、Dropbear、libc、动态加载器和 libstdc++ 的 AArch64 架构；用 debugfs 只读提取 ext4 中的对应文件，与 target 的 SHA-256 比较；用 e2fsck 只读检查文件系统。它不会运行目标程序或挂载镜像。
+检查程序用 file/readelf 核对 BusyBox、Dropbear、libc、动态加载器和 libstdc++ 的 AArch64 架构；用 debugfs 只读提取 ext4 中的对应文件，与 target 的 SHA-256 比较；用 e2fsck 只读检查文件系统。debugfs、e2fsck、dumpe2fs 都取自 `output/host/sbin`，与生成镜像的工具属于同一份 host-e2fsprogs，避免 Ubuntu 自带旧工具不认识新 ext4 特性。它不会运行目标程序或挂载镜像。
 
 `build-info.txt` 记录 Buildroot 版本/实际提交、项目提交、架构、libc、镜像大小和各阶段是否成功。失败先找对应阶段日志的首个直接错误，保留原记录并修复，不能只忽略失败退出码。
 
 本轮验收不包含 SSH 实际登录、驱动加载或 R76S 启动。后续若用于板子，还需集成启动组件、模块、网络/认证和 SD 布局并单独验证。
+
+## 首轮失败与修复
+
+[首轮运行 34937845522](https://github.com/billionsheep/r76s-robot-node/actions/runs/34937845522) 已完成源码/配置检查和 38 分 22 秒的编译，生成 128 MiB ext4，target 占用 7.0 MiB。五个 ELF 的 AArch64 检查与镜像内文件提取比对通过，但 Ubuntu 的 e2fsck 1.46.5 报 `unsupported feature(s): FEATURE_C12`，因此整轮正确记录为失败。
+
+直接原因是检查工具太旧，不支持 host-e2fsprogs 1.47.4 生成镜像中的 orphan_file 特性。修正为使用 `output/host/sbin` 中同次构建的检查工具，没有忽略退出码或关闭文件系统检查。首轮 Artifact 保留了 rootfs、配置、build-info（success=false）与失败日志；修复后的完整云端验收待执行。
 
 依据：[Buildroot 输出目录说明](https://buildroot.org/downloads/manual/manual.html#_buildroot_quick_start)、[固定版本的 ext4 生成规则](https://github.com/buildroot/buildroot/blob/d5180309b1b66ef3b8eaccca70ad69be8e0729a1/fs/ext2/ext2.mk)。

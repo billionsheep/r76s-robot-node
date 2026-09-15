@@ -61,6 +61,11 @@ def inspect(output, artifact):
     target = output / 'target'
     image = output / 'images/rootfs.ext4'
     assert image.is_file() and image.stat().st_size > 0, 'Missing ext4 image'
+    # 与 mkfs 使用同一份 host-e2fsprogs，避免宿主旧工具不认识新 ext4 特性。
+    fs_tools = {name: output / 'host/sbin' / name
+                for name in ['debugfs', 'e2fsck', 'dumpe2fs']}
+    for path in fs_tools.values():
+        assert path.is_file(), f'Missing Buildroot filesystem tool: {path}'
     records = {}
     log = []
 
@@ -87,7 +92,7 @@ def inspect(output, artifact):
         # debugfs 在临时目录只读提取镜像中的同一文件，验证确实已进入 ext4。
         with tempfile.TemporaryDirectory() as temp:
             extracted = Path(temp) / 'file'
-            run('debugfs', '-R', f'dump {relative} {extracted}', str(image))
+            run(str(fs_tools['debugfs']), '-R', f'dump {relative} {extracted}', str(image))
             assert extracted.is_file(), f'File missing from image: {relative}'
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             assert hashlib.sha256(extracted.read_bytes()).hexdigest() == digest, name
@@ -98,8 +103,8 @@ def inspect(output, artifact):
     assert (output / 'host/bin/aarch64-buildroot-linux-gnu-g++').is_file()
     image_type = run('file', str(image.resolve()))
     assert 'ext4 filesystem' in image_type, image_type
-    run('e2fsck', '-fn', str(image))
-    run('dumpe2fs', '-h', str(image))
+    run(str(fs_tools['e2fsck']), '-fn', str(image))
+    run(str(fs_tools['dumpe2fs']), '-h', str(image))
     dirs = {name: sorted(p.name for p in (output / name).iterdir())
             for name in ['host', 'build', 'target', 'images']}
     (artifact / 'output-directories.json').write_text(json.dumps(dirs, indent=2) + '\n')

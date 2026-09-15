@@ -2,15 +2,16 @@
 
 仓库使用公开仓库的标准 `ubuntu-22.04` x64 运行器。计算资源免费；不启用付费 larger runner、云服务器或付费缓存。产物只保留一天，源码和学习记录长期保留。GitHub 的产物存储有独立额度，计算免费不代表无限存储。
 
-## 三条工作流
+## 四条工作流
 
 1. **Learning CI**：修改程序后自动触发，也可手动运行。检查 Linux 上真实 uptime 与写入失败，交叉编译 ARM64 程序，生成校验文件。ARM64 文件编译通过不代表已在板子运行。
 2. **R76S kernel and DTB**：手动运行，固定厂商内核提交和 GCC 11.3 工具链，使用 `nanopi5_linux_defconfig` 与 `kvm.config`，实际构建 `Image` 和 `rockchip/rk3576-nanopi5-rev02.dtb`。2026-09-12 起，当前脚本追加本项目 `r76s-study.config` 设置学习版本后缀；运行 `34666871155` 已通过实际构建与产物核对，见 [当前实验](06-kernel-version-label.md)。
 3. **R76S U-Boot and loader**：固定 U-Boot/rkbin 提交，使用 nanopi_m5 配置并组合厂商预编译固件。首轮修复 ITS 收集路径后，运行 `34682638581` 成功，27 项下载校验与 FIT 内六个组件数据哈希检查通过，见 [逐文件说明与实际结果](08-uboot-workflow.md)。
+4. **Buildroot AArch64 rootfs lab**：独立手动入口，固定 Buildroot 2026.08 发布提交，自建 glibc/C++ 工具链，生成并检查 BusyBox/Dropbear `rootfs.ext4`。配置和各阶段命令见 [第一次 rootfs 实验](10-buildroot-rootfs.md)。
 
 R76S 的 DTS 文件名虽然带 `nanopi5-rev02`，其中明确声明 `FriendlyElec NanoPi R76S` 和 `friendlyelec,nanopi-r76s`。流水线会读取编译后的 DTB 检查这两个属性，避免根据文件名猜板型。
 
-第二条流水线目前只生成内核与 DTB；未包含 U-Boot、DDR 初始化固件、内核模块、rootfs 和 SD 分区布局，因此不能当作整卡镜像刷入。厂商完整打包脚本还会构建 r8125 等外部模块，这些属于后续完整镜像工作。
+第二条流水线后来增加了树内模块和 r8125，当前结果见 [模块实验](09-kernel-modules.md)；上面内核版本实验的历史产物仅含内核与 DTB。第四条只构建用户空间 rootfs，不依赖第二条结果。它们都没有组成完整 SD 磁盘布局，不能把单个组件当作整卡镜像刷入。
 
 ## 怎样操作
 
