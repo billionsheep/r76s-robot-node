@@ -4,7 +4,7 @@
 
 当前分工：Mac 编辑和连接设备，GitHub Actions 云端编译，R76S 验证运行。Windows QEMU 是可选辅助。无需先换 RK3588。
 
-2026-09-15 用户明确指定本轮成果：[Buildroot 2026.08 AArch64 rootfs 实验](10-buildroot-rootfs.md)。独立手动工作流和 defconfig 已准备，真实 GitHub 构建与文件检查待执行。本轮不接入内核/模块/U-Boot，不刷卡；下方较早进度保留为历史记录。
+2026-09-15 当前验收：[Buildroot 2026.08 AArch64 rootfs 实验](10-buildroot-rootfs.md) 已完成。运行 34941356407 全部成功：128 MiB ext4、target 7.0 MiB，五个 AArch64 ELF 与镜像内文件比对、只读文件系统检查及 20 项下载哈希通过。首轮 e2fsck 过旧问题已修复并保留失败记录。本轮不接入内核/模块/U-Boot，不刷卡；下方较早进度保留为历史记录。
 
 2026-09-14 当前实验：[匹配模块构建](09-kernel-modules.md)。用户完成 DTB 导读接续，现有工作流追加 modules 并构建固定版本 r8125；脚本已准备，真实构建和下载检查待执行。之前的 U-Boot/DTB 记录保留，尚无完整 SD 镜像或自建系统上板。
 
@@ -16,7 +16,7 @@
 | M1 用户程序 | 板上 GCC 构建并运行 edge-agent 0.1.0，读取 uptime 输出 JSON | 温度/内存、CMake、systemd 服务 |
 | 云端构建入口 | 公开仓库已建立，Learning CI 已通过，ARM64 产物下载后哈希一致 | 云端 ARM64 程序的板端运行待验证 |
 | M2 官方 BSP | Linux 6.1.141/学习版本、R76S DTB、U-Boot/启动固件均在云端构建并通过下载检查 | 匹配模块、板端启动未完成 |
-| M3 自建系统 | 已明确 Buildroot 路线 | rootfs、完整 SD 打包、上板验证、逐项裁剪 |
+| M3 自建系统 | Buildroot 2026.08 通用 AArch64 rootfs 已生成并通过云端/下载检查 | R76S 系统集成、完整 SD 打包、上板验证、逐项裁剪 |
 | M4–M7 | 已规划 RKNN、ROS 2、MCU、可靠性 | 尚未实施 |
 
 当前内核 6.1.141 的官方 Ubuntu 是运行基线。当前用户态程序在该系统部署；我们尚未生成并启动自己的完整系统镜像。

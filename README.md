@@ -35,7 +35,7 @@
 
 ## 接下来
 
-2026-09-15：新增独立的 [Buildroot rootfs 实验](docs/learning/10-buildroot-rootfs.md)，本轮验收仅为可检查的 AArch64 rootfs.ext4；构建结果待核对。它不依赖上一轮模块结果，不修改现有三个工作流，不组成完整 R76S SD 镜像。
+2026-09-15：[Buildroot rootfs 实验](docs/learning/10-buildroot-rootfs.md) 已通过真实云端和下载验收。固定 Buildroot 2026.08，生成 128 MiB AArch64 ext4，target 占用 7.0 MiB；20 项下载校验通过。首轮修复 e2fsck 版本不兼容后，运行 34941356407 全部成功。现有三个工作流未改，本轮没有组成完整 R76S SD 镜像。
 
 2026-09-14：已接入树内模块及固定版本 r8125 的编译、安装和打包，正在进行 [匹配模块实验](docs/learning/09-kernel-modules.md)。新脚本的真实云端与下载结果待验证。
 

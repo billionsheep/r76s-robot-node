@@ -1,6 +1,6 @@
 # 第一次 Buildroot rootfs 实验
 
-2026-09-15。目标只有：在 GitHub Actions 生成并检查一个 AArch64 `rootfs.ext4`。当前文件已准备，真实构建结果待核对；不包含 R76S 启动组件，不刷卡。
+2026-09-15。目标只有：在 GitHub Actions 生成并检查一个 AArch64 `rootfs.ext4`。[运行 34941356407](https://github.com/billionsheep/r76s-robot-node/actions/runs/34941356407) 已全部成功，产物已下载并通过 20 项 SHA-256 校验。本轮不包含 R76S 启动组件，不刷卡。
 
 ## 先看这几个文件
 
@@ -26,16 +26,16 @@ make -C work/buildroot O="$PWD/output" BR2_JLEVEL="$(nproc)"
 
 `-C` 让 make 进入 Buildroot 源码目录；`O` 指定单独的输出目录。第一个命令根据 defconfig 生成完整的 `output/.config`，第二个命令执行编译和打包。Mac 本轮只编辑、阅读与下载。
 
-| 输出目录 | 本实验要生成的内容 | 用在什么地方 |
+| 输出目录 | 本次实际生成的内容 | 用在什么地方 |
 | --- | --- | --- |
-| `output/host` | 在云端 x86_64 上运行的交叉 GCC/G++、构建工具，以及目标工具链的 sysroot（头文件和库） | 用于编译与打包；不是整目录放进板子 |
-| `output/build` | GCC、glibc、BusyBox、Dropbear 等包的解压源码、中间文件和构建状态 | 排查哪个包下载、配置或编译失败 |
+| `output/host` | 在云端 x86_64 上运行的 GCC/G++ 15.3.0 交叉工具链、e2fsprogs 1.47.4 等工具，以及 `aarch64-buildroot-linux-gnu/sysroot` 中的目标头文件和库 | 用于编译与打包；不是整目录放进板子 |
+| `output/build` | 实际有 `host-gcc-initial-15.3.0`、`host-gcc-final-15.3.0`、`glibc-2.44-…`、`busybox-1.38.0`、`dropbear-2026.94` 等源码和中间文件目录 | 排查哪个包下载、配置或编译失败 |
 | `output/target` | AArch64 BusyBox、Dropbear、glibc/动态加载器、libstdc++、init 链接与启动配置 | 接近最终 rootfs 的目录树；设备节点和最终权限需在镜像生成阶段处理 |
-| `output/images` | rootfs 文件系统镜像 | 本轮交付 `rootfs.ext4`，不生成完整 SD 磁盘布局 |
+| `output/images` | `rootfs.ext2` 实际文件及指向它的 `rootfs.ext4` 链接；内容是 ext4 | 本轮交付 `rootfs.ext4`，不生成完整 SD 磁盘布局 |
 
 Buildroot 用 ext2 家族统一构建规则生成实际为 ext4 的 `rootfs.ext2`，再建立 `rootfs.ext4` 链接。工作流复制时解引用该链接，Artifact 中的 `rootfs.ext4` 是实际文件。`ls -lh` 同时记录链接及解引用后的容量。
 
-128 MiB 是预设文件系统容量，包含空闲空间；`du -sh output/target` 则统计目录文件的磁盘占用，两者含义不同。真实目录清单会保存到 `output-directories.json`。
+128 MiB 是预设文件系统容量，包含空闲空间；`du -sh output/target` 则统计目录文件的磁盘占用，两者含义不同。真实目录清单已保存到 `output-directories.json`。target 中还可看到 `THIS_IS_NOT_YOUR_ROOT_FILESYSTEM` 提示文件，提醒你交付物应取自 images。
 
 ## 怎样查看结果
 
@@ -49,10 +49,28 @@ Buildroot 用 ext2 家族统一构建规则生成实际为 ext4 的 `rootfs.ext2
 
 本轮验收不包含 SSH 实际登录、驱动加载或 R76S 启动。后续若用于板子，还需集成启动组件、模块、网络/认证和 SD 布局并单独验证。
 
+## 实际验收结果
+
+成功运行对应项目提交 `430f38e8c70a264773e0088c14584e0ab3a6a168`，使用标准 Ubuntu 22.04 / 4 核运行器。任务总计 40 分 28 秒，其中构建步骤 39 分 38 秒。Artifact 名称为 `buildroot-rootfs-34941356407`。
+
+| 核对项目 | 真实结果 |
+| --- | --- |
+| Buildroot | 2026.08，提交 `d5180309b1b66ef3b8eaccca70ad69be8e0729a1` |
+| BusyBox / Dropbear | `/bin/busybox`、`/usr/sbin/dropbear` 存在，均为 AArch64 ELF |
+| 运行库 | `libc.so.6`、`ld-linux-aarch64.so.1`、`libstdc++.so.6` 存在，均为 AArch64 ELF |
+| init | `/sbin/init` 指向 BusyBox；inittab 与 S50dropbear 启动脚本存在 |
+| target 占用 | `du -sh output/target` 输出 `7.0M` |
+| ext4 容量 | `ls -lhL` 输出 `128M`，实际 134,217,728 bytes |
+| 镜像检查 | 五个文件从 ext4 提取后与 target 的哈希一致；e2fsck 1.47.4 只读检查通过 |
+| 下载检查 | 20 项 SHA-256 全部通过；超级块容量与文件大小一致，文件系统标记 clean |
+| 配置对照 | 首轮与成功轮的 defconfig、最终 `.config`、resolved_defconfig 均相同 |
+
+rootfs SHA-256：`e9b89ac6798faf073fd054b4a9ab98b6d98360ed191fe46a88b34a6c2c63c428`。固定源码和配置方便重建；这次没有声称镜像已达到逐字节可复现。
+
 ## 首轮失败与修复
 
 [首轮运行 34937845522](https://github.com/billionsheep/r76s-robot-node/actions/runs/34937845522) 已完成源码/配置检查和 38 分 22 秒的编译，生成 128 MiB ext4，target 占用 7.0 MiB。五个 ELF 的 AArch64 检查与镜像内文件提取比对通过，但 Ubuntu 的 e2fsck 1.46.5 报 `unsupported feature(s): FEATURE_C12`，因此整轮正确记录为失败。
 
-直接原因是检查工具太旧，不支持 host-e2fsprogs 1.47.4 生成镜像中的 orphan_file 特性。修正为使用 `output/host/sbin` 中同次构建的检查工具，没有忽略退出码或关闭文件系统检查。首轮 Artifact 保留了 rootfs、配置、build-info（success=false）与失败日志；修复后的完整云端验收待执行。
+直接原因是检查工具太旧，不支持 host-e2fsprogs 1.47.4 生成镜像中的 orphan_file 特性。修正为使用 `output/host/sbin` 中同次构建的检查工具，没有忽略退出码或关闭文件系统检查。首轮 rootfs、配置、build-info（success=false）与失败日志已下载留存；修复后完整重跑通过，成功轮 build-info 为 success=true。
 
 依据：[Buildroot 输出目录说明](https://buildroot.org/downloads/manual/manual.html#_buildroot_quick_start)、[固定版本的 ext4 生成规则](https://github.com/buildroot/buildroot/blob/d5180309b1b66ef3b8eaccca70ad69be8e0729a1/fs/ext2/ext2.mk)。
