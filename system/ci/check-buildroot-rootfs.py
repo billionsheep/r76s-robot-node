@@ -9,6 +9,10 @@ import tempfile
 from pathlib import Path
 
 
+OVERLAY_DIR = Path(__file__).resolve().parents[1] / 'buildroot/rootfs-overlay'
+OVERLAY_FILES = ('etc/motd', 'etc/profile.d/r76s-lab.sh', 'usr/share/r76s-lab/version')
+
+
 def check_config(output):
     text = (output / '.config').read_text()
     required = ['BR2_aarch64', 'BR2_TOOLCHAIN_BUILDROOT', 'BR2_TOOLCHAIN_USES_GLIBC',
@@ -22,6 +26,9 @@ def check_config(output):
         assert f'{key}=y' in text.splitlines(), f'Missing required selection: {key}'
     for key in forbidden:
         assert f'{key}=y' not in text.splitlines(), f'Unexpected selection: {key}'
+    assert 'BR2_ROOTFS_OVERLAY="../../system/buildroot/rootfs-overlay"' in text.splitlines(), 'Missing lab overlay configuration'
+    for name in OVERLAY_FILES:
+        assert (OVERLAY_DIR / name).is_file(), f'Missing overlay input: {name}'
     print('Configuration matches the rootfs-only experiment.', flush=True)
 
 
@@ -55,6 +62,23 @@ def target_path(root, name):
     result = root.joinpath(*resolved)
     assert result.is_file(), f'Missing target file: {name}'
     return result
+
+
+def check_overlay(target, image, debugfs, run):
+    """以仓库文件为准，依次核对 target 和 ext4 中的内容。"""
+    records = {}
+    for name in OVERLAY_FILES:
+        expected = (OVERLAY_DIR / name).read_bytes()
+        path = target_path(target, '/' + name)
+        assert path.read_bytes() == expected, f'Overlay differs in target: {name}'
+        with tempfile.TemporaryDirectory() as temp:
+            extracted = Path(temp) / 'file'
+            run(str(debugfs), '-R', f'dump /{name} {extracted}', str(image))
+            assert extracted.is_file(), f'Overlay missing from image: {name}'
+            assert extracted.read_bytes() == expected, f'Overlay differs in image: {name}'
+        records['/' + name] = {'sha256': hashlib.sha256(expected).hexdigest()}
+        print(f'Overlay verified: /{name}', flush=True)
+    return records
 
 
 def inspect(output, artifact):
@@ -105,11 +129,13 @@ def inspect(output, artifact):
     assert 'ext4 filesystem' in image_type, image_type
     run(str(fs_tools['e2fsck']), '-fn', str(image))
     run(str(fs_tools['dumpe2fs']), '-h', str(image))
+    overlay_records = check_overlay(target, image, fs_tools['debugfs'], run)
     dirs = {name: sorted(p.name for p in (output / name).iterdir())
             for name in ['host', 'build', 'target', 'images']}
     (artifact / 'output-directories.json').write_text(json.dumps(dirs, indent=2) + '\n')
     (artifact / 'inspection.json').write_text(json.dumps({
         'success': True, 'files': records, 'rootfs_bytes': image.stat().st_size,
+        'overlay_files': overlay_records,
         'filesystem': 'ext4', 'e2fsck_readonly_passed': True,
         'busybox_init': True, 'board_boot_tested': False,
     }, indent=2) + '\n')

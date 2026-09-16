@@ -2,6 +2,18 @@
 
 2026-09-15。目标只有：在 GitHub Actions 生成并检查一个 AArch64 `rootfs.ext4`。[运行 34941356407](https://github.com/billionsheep/r76s-robot-node/actions/runs/34941356407) 已全部成功，产物已下载并通过 20 项 SHA-256 校验。本轮不包含 R76S 启动组件，不刷卡。
 
+接续小实验：**rootfs overlay 文件与检查已准备，云端验收待完成**。下方已成功的运行属于加入 overlay 之前的基线，不能作为这三个新文件已经进入镜像的证据。
+
+输入位于 [rootfs-overlay](../../system/buildroot/rootfs-overlay/)：`etc/motd`、`etc/profile.d/r76s-lab.sh`、`usr/share/r76s-lab/version`。三者仅标识 `R76S Buildroot Lab v0`；profile 脚本设置 `R76S_LAB_VERSION`，没有密码或服务配置。
+
+[defconfig](../../system/buildroot/r76s_lab_defconfig) 增加 `BR2_ROOTFS_OVERLAY="../../system/buildroot/rootfs-overlay"`。这个相对路径以现有 `make -C work/buildroot` 的源码目录为起点，向上两层回到仓库根目录。Buildroot 在目标目录整理阶段复制 overlay 内容，再生成 ext4；同名文件会被覆盖。这是构建时文件复制，与运行时 OverlayFS 分层挂载不同。
+
+现有检查脚本以仓库文件为准：先比较 `output/target` 中三个文件，再用 debugfs 从 ext4 提取并逐字节比较；成功后在 `inspection.json` 的 `overlay_files` 中记录三项哈希。工作流和构建 Shell 脚本均未修改。
+
+本地完成语法、路径、标识变量和临时目录检查逻辑验证；没有构建或修改真实镜像。2026-09-16，用户授权提交、推送本次 overlay 改动，并通过浏览器手动启动现有 **Buildroot AArch64 rootfs lab**（`buildroot-rootfs.yml`），分支选择 `main`。启动后停止，不等待或持续监控 Actions；新镜像内容是否通过检查，以这次运行的实际结果为准。
+
+数据流：仓库 overlay 文件 → `BR2_ROOTFS_OVERLAY` → `output/target` → `rootfs.ext4`。回退时撤回本次 overlay 配置与检查改动，恢复到原来的 rootfs 构建；本轮没有板端变化。
+
 ## 先看这几个文件
 
 - [buildroot-rootfs.yml](../../.github/workflows/buildroot-rootfs.yml)：独立手动工作流，标准 Ubuntu 22.04；安装工具 → 取源码 → 配置 → 编译 → 检查 → 留存结果。

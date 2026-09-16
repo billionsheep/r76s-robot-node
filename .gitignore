@@ -38,6 +38,7 @@ __pycache__/
 /system/buildroot/*
 !/system/buildroot/r76s_lab_defconfig
 !/system/buildroot/version.env
+!/system/buildroot/rootfs-overlay/
 !/tests/
 /tests/*
 !/tests/check-edge-agent.py
