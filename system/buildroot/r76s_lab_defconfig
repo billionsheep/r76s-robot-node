@@ -6,6 +6,7 @@ BR2_TOOLCHAIN_BUILDROOT_CXX=y
 BR2_INIT_BUSYBOX=y
 BR2_PACKAGE_BUSYBOX=y
 BR2_PACKAGE_DROPBEAR=y
+BR2_PACKAGE_R76S_EDGE_AGENT=y
 # 相对现有 make -C work/buildroot 使用的 Buildroot 源码目录。
 BR2_ROOTFS_OVERLAY="../../system/buildroot/rootfs-overlay"
 BR2_TARGET_ROOTFS_EXT2=y

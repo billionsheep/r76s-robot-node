@@ -9,6 +9,7 @@ fi
 cd "${GITHUB_WORKSPACE:?}"
 ROOT="$PWD"
 BR="$ROOT/work/buildroot"
+BR_EXTERNAL="$ROOT/system/buildroot/external"
 OUT="$ROOT/output"
 ART="$ROOT/artifacts"
 source system/buildroot/version.env
@@ -35,16 +36,16 @@ prepare)
     cp system/buildroot/version.env "$ART/version.env"
     ;;
 configure)
-    make -C "$BR" O="$OUT" BR2_DEFCONFIG="$ROOT/system/buildroot/r76s_lab_defconfig" defconfig
+    make -C "$BR" O="$OUT" BR2_EXTERNAL="$BR_EXTERNAL" BR2_DEFCONFIG="$ROOT/system/buildroot/r76s_lab_defconfig" defconfig
     python3 system/ci/check-buildroot-rootfs.py config "$OUT" "$ART"
     cp "$OUT/.config" "$ART/.config"
-    make -C "$BR" O="$OUT" BR2_DEFCONFIG="$ART/resolved_defconfig" savedefconfig
+    make -C "$BR" O="$OUT" BR2_EXTERNAL="$BR_EXTERNAL" BR2_DEFCONFIG="$ART/resolved_defconfig" savedefconfig
     ;;
 build)
     { date -u; nproc; free -h; df -h "$ROOT"; } > "$ART/resources-before.txt"
     # Buildroot 自己安排各包内部并行，不打开实验性的顶层并行构建。
     /usr/bin/time -v -o "$ART/compile-time.txt" \
-        make -C "$BR" O="$OUT" BR2_JLEVEL="$(nproc)"
+        make -C "$BR" O="$OUT" BR2_EXTERNAL="$BR_EXTERNAL" BR2_JLEVEL="$(nproc)"
     { date -u; free -h; df -h "$ROOT"; du -sh "$OUT"; } > "$ART/resources-after.txt"
     ;;
 inspect)

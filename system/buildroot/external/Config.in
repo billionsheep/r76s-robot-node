@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_R76S_LAB_PATH/package/r76s-edge-agent/Config.in"

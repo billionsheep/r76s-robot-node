@@ -1,8 +1,10 @@
 # 第一次 Buildroot rootfs 实验
 
+2026-09-17 接续：[edge-agent Buildroot Package 接线](12-buildroot-edge-agent-package.md) 已完成准备和静态检查，通过 BR2_EXTERNAL 引入新包；用户已授权提交、推送并手动触发现有工作流，实际构建结果待验收。下文原实验的成功结果和“脚本未修改”均对应各自历史运行，不能当作新包的构建验收。
+
 2026-09-15。目标只有：在 GitHub Actions 生成并检查一个 AArch64 `rootfs.ext4`。[运行 34941356407](https://github.com/billionsheep/r76s-robot-node/actions/runs/34941356407) 已全部成功，产物已下载并通过 20 项 SHA-256 校验。本轮不包含 R76S 启动组件，不刷卡。
 
-接续小实验：**rootfs overlay 文件与检查已准备，云端验收待完成**。下方已成功的运行属于加入 overlay 之前的基线，不能作为这三个新文件已经进入镜像的证据。
+接续小实验：**rootfs overlay 云端和下载验收通过**。2026-09-16，[第 3 次运行 35046906383](https://github.com/billionsheep/r76s-robot-node/actions/runs/35046906383) 使用提交 `3017978`，rootfs 任务耗时 42 分 32 秒，其中构建阶段 41 分 52 秒。三个 overlay 文件在 target 与 ext4 提取后的内容均与仓库输入相同；下载后 20 项 SHA-256 全部通过。下面的第 2 次运行属于未加入 overlay 的基线。
 
 输入位于 [rootfs-overlay](../../system/buildroot/rootfs-overlay/)：`etc/motd`、`etc/profile.d/r76s-lab.sh`、`usr/share/r76s-lab/version`。三者仅标识 `R76S Buildroot Lab v0`；profile 脚本设置 `R76S_LAB_VERSION`，没有密码或服务配置。
 
@@ -10,9 +12,43 @@
 
 现有检查脚本以仓库文件为准：先比较 `output/target` 中三个文件，再用 debugfs 从 ext4 提取并逐字节比较；成功后在 `inspection.json` 的 `overlay_files` 中记录三项哈希。工作流和构建 Shell 脚本均未修改。
 
-本地完成语法、路径、标识变量和临时目录检查逻辑验证；没有构建或修改真实镜像。2026-09-16，用户授权提交、推送本次 overlay 改动，并通过浏览器手动启动现有 **Buildroot AArch64 rootfs lab**（`buildroot-rootfs.yml`），分支选择 `main`。启动后停止，不等待或持续监控 Actions；新镜像内容是否通过检查，以这次运行的实际结果为准。
+准备阶段只做本地语法、路径、标识变量和临时目录检查。2026-09-16，用户授权提交、推送本次 overlay 改动，并通过浏览器手动启动现有 **Buildroot AArch64 rootfs lab**（`buildroot-rootfs.yml`），分支选择 `main`。启动后停止；用户报告完成后，再读取结果、下载产物并验收，没有持续监控或重新触发构建。
 
 数据流：仓库 overlay 文件 → `BR2_ROOTFS_OVERLAY` → `output/target` → `rootfs.ext4`。回退时撤回本次 overlay 配置与检查改动，恢复到原来的 rootfs 构建；本轮没有板端变化。
+
+### 对照这次真实构建
+
+新旧最终 `.config` 只有一项变化：`BR2_ROOTFS_OVERLAY` 从空字符串变成我们的目录；镜像仍为 128 MiB，`du -sh output/target` 仍显示 7.0M。固定容量不会因为增加几行文本就自动变大。AArch64 程序/库检查及云端只读 e2fsck 也通过。这仍是 rootfs 组件，没有 R76S 启动验收。
+
+| 文件 | 在什么地方发挥作用 |
+| --- | --- |
+| `rootfs-overlay/etc/motd` | Buildroot 复制为目标系统 `/etc/motd`，内容为实验标识 |
+| `rootfs-overlay/etc/profile.d/r76s-lab.sh` | 复制为 shell 配置片段；构建时仅复制，未来由 shell 读取时设置环境变量 |
+| `rootfs-overlay/usr/share/r76s-lab/version` | 复制为可供程序或命令读取的版本文件 |
+| `r76s_lab_defconfig` | configure 阶段生成最终 `.config`，build 阶段按其中的 overlay 路径复制文件 |
+| `check-buildroot-rootfs.py` | configure 检查输入；inspect 比较仓库、target、ext4 提取文件的内容，失败即报错 |
+| `.gitignore` | 提交前允许 Git 纳入 overlay 目录，使 Actions checkout 能取得这些原文件 |
+| 本文档 | 保存说明和验收结果，不参与镜像生成 |
+
+原工作流依次调用现有 Shell 脚本的 `prepare`、`configure`、`build`、`inspect`、`collect`。本次没有修改工作流和构建 Shell 脚本；修改被它们原有的读取配置、执行 Buildroot、调用检查程序的步骤使用。
+
+真实 `build.log` 第 69898 行：
+
+```text
+>>>   Copying overlay ../../system/buildroot/rootfs-overlay
+```
+
+随后第 69906 行制作文件系统；虽然内部输出名为 `rootfs.ext2`，实际调用的是 `mkfs.ext4`，并生成 `rootfs.ext4` 链接。收集脚本使用 `cp -L` 取得实际镜像文件。
+
+`inspect.log` 第 256、258、260 行：
+
+```text
+Overlay verified: /etc/motd
+Overlay verified: /etc/profile.d/r76s-lab.sh
+Overlay verified: /usr/share/r76s-lab/version
+```
+
+本地保留 [验收摘要](../evidence/rootfs-overlay-001.json)、[配置差异](../evidence/github-35046906383/config-diff.txt) 和 [下载产物](../evidence/github-35046906383/artifacts/)。本地复核了下载哈希、配置差异和输入文件哈希；实际 debugfs 提取与 target 比较在云端执行，本机没有重新提取或运行目标系统。原始证据不提交公开仓库。
 
 ## 先看这几个文件
 

@@ -18,6 +18,7 @@ def check_config(output):
     required = ['BR2_aarch64', 'BR2_TOOLCHAIN_BUILDROOT', 'BR2_TOOLCHAIN_USES_GLIBC',
                 'BR2_TOOLCHAIN_BUILDROOT_CXX', 'BR2_INSTALL_LIBSTDCPP',
                 'BR2_INIT_BUSYBOX', 'BR2_PACKAGE_BUSYBOX', 'BR2_PACKAGE_DROPBEAR',
+                'BR2_PACKAGE_R76S_EDGE_AGENT',
                 'BR2_TARGET_ROOTFS_EXT2', 'BR2_TARGET_ROOTFS_EXT2_4']
     forbidden = ['BR2_LINUX_KERNEL', 'BR2_TARGET_UBOOT', 'BR2_PACKAGE_PYTHON3',
                  'BR2_PACKAGE_DOCKER_ENGINE', 'BR2_PACKAGE_XORG7',
@@ -101,14 +102,16 @@ def inspect(output, artifact):
         assert result.returncode == 0, f'Command failed: {args[0]}'
         return result.stdout
 
-    for name in ['/bin/busybox', '/usr/sbin/dropbear', '/lib/libc.so.6',
+    for name in ['/bin/busybox', '/usr/sbin/dropbear', '/usr/bin/edge-agent', '/lib/libc.so.6',
                  '/lib/ld-linux-aarch64.so.1', '/usr/lib/libstdc++.so.6']:
         path = target_path(target, name)
+        if name == '/usr/bin/edge-agent':
+            assert path.stat().st_mode & 0o111, 'edge-agent is not executable'
         description = run('file', str(path))
         header = run('readelf', '-h', str(path))
         assert 'ELF 64-bit' in description and 'ARM aarch64' in description, name
         assert re.search(r'Machine:\s+AArch64', header), name
-        if name in ['/bin/busybox', '/usr/sbin/dropbear']:
+        if name in ['/bin/busybox', '/usr/sbin/dropbear', '/usr/bin/edge-agent']:
             program_headers = run('readelf', '-l', str(path))
             match = re.search(r'Requesting program interpreter: ([^\]]+)', program_headers)
             assert match and target_path(target, match[1]), f'Missing dynamic loader: {name}'
