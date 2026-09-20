@@ -2,4 +2,4 @@ config BR2_PACKAGE_R76S_EDGE_AGENT
 	bool "r76s-edge-agent"
 	help
 	  读取 /proc/uptime 并输出一行 JSON 的学习程序。
-	  安装到 /usr/bin/edge-agent，不设置自动启动。
+	  安装到 /usr/bin/edge-agent，BusyBox/SysV 启动时执行一次。

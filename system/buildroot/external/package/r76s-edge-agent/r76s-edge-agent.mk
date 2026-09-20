@@ -12,4 +12,9 @@ define R76S_EDGE_AGENT_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 "$(@D)/edge-agent" "$(TARGET_DIR)/usr/bin/edge-agent"
 endef
 
+define R76S_EDGE_AGENT_INSTALL_INIT_SYSV
+	$(INSTALL) -D -m 0755 "$(R76S_EDGE_AGENT_PKGDIR)/S90edge-agent" \
+		"$(TARGET_DIR)/etc/init.d/S90edge-agent"
+endef
+
 $(eval $(generic-package))

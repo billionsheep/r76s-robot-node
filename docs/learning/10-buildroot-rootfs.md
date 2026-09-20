@@ -1,6 +1,6 @@
 # 第一次 Buildroot rootfs 实验
 
-2026-09-17 接续：[edge-agent Buildroot Package 接线](12-buildroot-edge-agent-package.md) 已完成准备和静态检查，通过 BR2_EXTERNAL 引入新包；用户已授权提交、推送并手动触发现有工作流，实际构建结果待验收。下文原实验的成功结果和“脚本未修改”均对应各自历史运行，不能当作新包的构建验收。
+2026-09-17 接续：[edge-agent Buildroot Package](12-buildroot-edge-agent-package.md) 已通过运行 35174251542 的云端与下载验收：正式通过 BR2_EXTERNAL 构建 AArch64 edge-agent，安装并验证镜像内 /usr/bin/edge-agent，20 项下载 SHA-256 通过。下文原实验的成功结果和“脚本未修改”均对应各自历史运行，新包结果见接续文档。
 
 2026-09-15。目标只有：在 GitHub Actions 生成并检查一个 AArch64 `rootfs.ext4`。[运行 34941356407](https://github.com/billionsheep/r76s-robot-node/actions/runs/34941356407) 已全部成功，产物已下载并通过 20 项 SHA-256 校验。本轮不包含 R76S 启动组件，不刷卡。
 

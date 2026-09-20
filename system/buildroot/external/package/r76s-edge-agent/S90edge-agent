@@ -1,0 +1,18 @@
+#!/bin/sh
+# edge-agent 执行一次后退出，不创建后台进程。
+
+case "$1" in
+	start)
+		/usr/bin/edge-agent
+		;;
+	stop)
+		echo 'edge-agent: one-shot 程序，没有常驻进程需要停止。'
+		;;
+	restart)
+		"$0" stop && "$0" start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}" >&2
+		exit 1
+		;;
+esac

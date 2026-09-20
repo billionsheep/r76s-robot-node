@@ -82,6 +82,28 @@ def check_overlay(target, image, debugfs, run):
     return records
 
 
+def check_image_file(target, path, image, debugfs, run):
+    """只读提取镜像中的同一文件，与 target 比较 SHA-256；不执行文件。"""
+    relative = '/' + str(path.relative_to(target))
+    with tempfile.TemporaryDirectory() as temp:
+        extracted = Path(temp) / 'file'
+        run(str(debugfs), '-R', f'dump {relative} {extracted}', str(image))
+        assert extracted.is_file(), f'File missing from image: {relative}'
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert hashlib.sha256(extracted.read_bytes()).hexdigest() == digest, relative
+    return {'image_path': relative, 'sha256': digest}
+
+
+def check_init_script(target, image, debugfs, run):
+    name = '/etc/init.d/S90edge-agent'
+    path = target_path(target, name)
+    assert path.stat().st_mode & 0o111, f'Init script is not executable: {name}'
+    assert '/usr/bin/edge-agent' in path.read_text(), f'Missing edge-agent reference: {name}'
+    record = check_image_file(target, path, image, debugfs, run)
+    print(f'Init script verified: {name}', flush=True)
+    return {name: record}
+
+
 def inspect(output, artifact):
     target = output / 'target'
     image = output / 'images/rootfs.ext4'
@@ -115,15 +137,8 @@ def inspect(output, artifact):
             program_headers = run('readelf', '-l', str(path))
             match = re.search(r'Requesting program interpreter: ([^\]]+)', program_headers)
             assert match and target_path(target, match[1]), f'Missing dynamic loader: {name}'
-        relative = '/' + str(path.relative_to(target))
-        # debugfs 在临时目录只读提取镜像中的同一文件，验证确实已进入 ext4。
-        with tempfile.TemporaryDirectory() as temp:
-            extracted = Path(temp) / 'file'
-            run(str(fs_tools['debugfs']), '-R', f'dump {relative} {extracted}', str(image))
-            assert extracted.is_file(), f'File missing from image: {relative}'
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
-            assert hashlib.sha256(extracted.read_bytes()).hexdigest() == digest, name
-        records[name] = {'image_path': relative, 'sha256': digest, 'architecture': 'AArch64'}
+        record = check_image_file(target, path, image, fs_tools['debugfs'], run)
+        records[name] = {**record, 'architecture': 'AArch64'}
     assert target_path(target, '/sbin/init') == target_path(target, '/bin/busybox')
     assert target_path(target, '/etc/inittab')
     assert target_path(target, '/etc/init.d/S50dropbear')
@@ -133,12 +148,14 @@ def inspect(output, artifact):
     run(str(fs_tools['e2fsck']), '-fn', str(image))
     run(str(fs_tools['dumpe2fs']), '-h', str(image))
     overlay_records = check_overlay(target, image, fs_tools['debugfs'], run)
+    init_records = check_init_script(target, image, fs_tools['debugfs'], run)
     dirs = {name: sorted(p.name for p in (output / name).iterdir())
             for name in ['host', 'build', 'target', 'images']}
     (artifact / 'output-directories.json').write_text(json.dumps(dirs, indent=2) + '\n')
     (artifact / 'inspection.json').write_text(json.dumps({
         'success': True, 'files': records, 'rootfs_bytes': image.stat().st_size,
         'overlay_files': overlay_records,
+        'init_scripts': init_records,
         'filesystem': 'ext4', 'e2fsck_readonly_passed': True,
         'busybox_init': True, 'board_boot_tested': False,
     }, indent=2) + '\n')

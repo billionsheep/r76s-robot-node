@@ -1,6 +1,30 @@
 # 把 edge-agent 接入 Buildroot Package
 
-2026-09-16 准备阶段只完成本地代码与配置接线、静态检查，没有编译或启动 edge-agent，也没有生成新镜像。2026-09-17 用户授权提交、推送并手动触发现有 Buildroot rootfs 工作流；实际构建和镜像验收仍待结果确认。此前成功的 overlay 镜像不能作为这次 Package 已经构建成功的证据。
+2026-09-16 完成接线和静态检查；2026-09-17 按用户授权提交、推送和手动构建。用户要求查结果后，[运行 35174251542](https://github.com/billionsheep/r76s-robot-node/actions/runs/35174251542) 的云端与下载验收通过，提交为 `5d0373c`。edge-agent 已成为镜像内的 AArch64 ELF；没有启动该程序或验证 R76S 启动。
+
+下一项小实验：[Package 安装 one-shot 启动脚本](13-buildroot-edge-agent-init.md)。本文保留最初 Package 接入及其构建结果，新脚本的验证状态见接续文档。
+
+## 本次结果如何对应 diff
+
+rootfs 任务 53 分 34 秒，构建步骤 52 分 54 秒。下载后 20 项 SHA-256 通过，rootfs 为 128 MiB，target 的 du -sh 为 7.0M。最终配置相比 overlay 基线只新增三个 external 元数据和包开关，原有选择不变。
+
+| 提交中的文件 | 实际生效证据 |
+| --- | --- |
+| `.gitignore` | 新 external 文件已进入提交并被 Actions checkout；这是文件纳入版本控制的作用 |
+| `external/external.desc` | `.config` 第 6–8 行出现 R76S_LAB、external 绝对路径、-g5d0373c；末尾有描述文字 |
+| `external/Config.in` | 包的选项成功进入最终配置，说明配置入口已经加载 |
+| `external/external.mk` | 默认构建实际执行 r76s-edge-agent 包配方，说明 .mk 已纳入构建 |
+| `package/r76s-edge-agent/Config.in` | 最终 `.config` 第 4228 行和 resolved_defconfig 第 10 行保留包开关 |
+| `package/r76s-edge-agent/r76s-edge-agent.mk` | build.log 第 69938–69944 行：local 同步源码、交叉编译、0755 安装到 target |
+| `r76s_lab_defconfig` | 下载的输入 defconfig 与提交逐字节相同，且包选择进入最终/精简配置 |
+| `build-buildroot-rootfs.sh` | configure、savedefconfig、build 均完成；external 已加载并真正构建包 |
+| `check-buildroot-rootfs.py` | inspect.log 第 124 行为 ARM aarch64 ELF，第 133 行 Machine: AArch64；权限与动态加载器检查通过；inspection.txt 第 205 行从 ext4 提取程序，inspection.json 留存内容一致的哈希 |
+| `10-buildroot-rootfs.md` | 实验入口与前次 overlay 验收记录，不是构建输入 |
+| 本文档 | 教学和结果说明，不是构建输入 |
+
+`BR2_EXTERNAL_NAMES/PATH/VERSION` 是 Buildroot 按构建入口自动生成的元数据，不是我们手写的新包开关。`TARGET_CFLAGS` 在日志里展开为大文件支持、`-O2 -g0 -D_FORTIFY_SOURCE=1` 等；本次 `TARGET_LDFLAGS` 没有附加参数，配方保留引用符合预期。
+
+关键记录保存在本地 [日志摘录](../evidence/github-35174251542/edge-agent-log-excerpts.txt)、[最终配置差异](../evidence/github-35174251542/config-diff.txt)、[验收摘要](../evidence/edge-agent-package-build-001.json)。实际 ELF 与 debugfs 比对在云端执行，本地验证了下载哈希、配置和报告对应关系；未在 Mac 重新执行目标程序或提取镜像。原始日志和镜像不推送公开仓库。
 
 源码继续使用仓库唯一的 `edge-agent/main.c`，内容不修改。下面各路径相对仓库根目录。完整改动可在本次 Package 接入的 Git 提交差异中查看；准备阶段的相关差异另存于本地 `docs/evidence/edge-agent-package-preflight/changes.diff`。
 
@@ -160,7 +184,7 @@ if name == '/usr/bin/edge-agent':
     assert path.stat().st_mode & 0o111, 'edge-agent is not executable'
 ```
 
-这些行分别是什么意思：发现目标程序后检查其执行位。后续沿用原有 `file`、`readelf -h`、动态加载器检查、debugfs 提取与 SHA-256 比较；没有复制另一套检查函数，也不会启动程序。将来实际构建时，缺文件、错误架构、无执行权限、镜像缺文件或内容不同都会失败；本轮没有运行这些真实 ELF/镜像检查。
+这些行分别是什么意思：发现目标程序后检查其执行位。后续沿用原有 `file`、`readelf -h`、动态加载器检查、debugfs 提取与 SHA-256 比较；没有复制另一套检查函数，也不会启动程序。缺文件、错误架构、无执行权限、镜像缺文件或内容不同都会失败。2026-09-17 这套真实 ELF/镜像检查已经在云端通过。
 
 ## 修改/新增文件 9
 
@@ -193,14 +217,14 @@ flowchart TD
   SOURCE["edge-agent/main.c"] -->|SITE_METHOD = local| BUILD["output/build 中的包构建目录/main.c"]
   RECIPE --> CC["TARGET_CC + TARGET_CFLAGS + TARGET_LDFLAGS"]
   BUILD --> CC
-  CC --> ELF["包构建目录/edge-agent<br/>预期为 AArch64 ELF"]
+  CC --> ELF["包构建目录/edge-agent<br/>已验证为 AArch64 ELF"]
   ELF --> INSTALL["TARGET_DIR/usr/bin/edge-agent<br/>= output/target/usr/bin/edge-agent"]
   INSTALL --> IMAGE["output/images/rootfs.ext4"]
   IMAGE --> CHECK["system/ci/check-buildroot-rootfs.py<br/>复用 ELF 和镜像内容检查"]
 ```
 
-快速检查：Bash/Python 语法、唯一源码路径、Git 放行、defconfig 最小差异、固定版本官方 br2-external 元数据注册、Make 命令块只打印预览、缺失包开关时拒绝配置，均通过。预览未执行 generic-package 内部流程，也未调用编译器；未生成真实的新 `.config` 或 ELF。证据在本地 `docs/evidence/edge-agent-package-preflight/verification.json`。
+准备阶段的快速检查：Bash/Python 语法、唯一源码路径、Git 放行、defconfig 最小差异、固定版本官方 br2-external 元数据注册、Make 命令块只打印预览、缺失包开关时拒绝配置，均通过。当时未编译，证据在本地 `docs/evidence/edge-agent-package-preflight/verification.json`。后续真实云端结果见本页开头，不将静态预览和实际构建混为同一次检查。
 
-所有工作流、Kernel/U-Boot、启动逻辑、overlay 原文件和 main.c 未改。此次按用户授权启动现有 Buildroot AArch64 rootfs lab 后停止，不等待或持续监控编译；实际 ELF、镜像结果须另行验收。
+所有工作流、Kernel/U-Boot、启动逻辑、overlay 原文件和 main.c 未改。启动后停止，直到用户要求查看结果才下载并验收。没有重新触发构建、自动启动服务、执行 edge-agent 或刷卡；板端运行仍未验证。
 
 官方依据：[Buildroot 2026.08 external tree](https://buildroot.org/downloads/manual/manual.html#outside-br-custom)；[固定提交的 generic-package 文档](https://github.com/buildroot/buildroot/blob/d5180309b1b66ef3b8eaccca70ad69be8e0729a1/docs/manual/adding-packages-generic.adoc)。
